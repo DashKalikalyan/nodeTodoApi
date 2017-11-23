@@ -6,6 +6,8 @@ const _ = require('lodash');
 var mongoose = require ('./db/mongoose').mongoose;
 var Todo = require ('./models/todo').Todo;
 var User = require ('./models/user').User;
+var authenticate = require('./middleware/authenticate').authenticate;
+// import {authenticate} from './middleware/authenticate';
 
 //ALTERNATE METHOD
 // var {mongoose} = require ('./db/mongoose');
@@ -38,25 +40,30 @@ app.get('/todos', (req, res) => {
     });
 });
 
+
 app.get('/users', (req, res) => {
-    User.find({email: 'test1@test.com'}, 'email').then((users) => {
+    User.find({}, 'email').then((users) => {
         res.send(users);
     }, (e) => {
         res.status(400).send(e);
     });
 });
 
-app.get('/users/:id', (req, res) => {
-    User.findById(req.params.id).then((doc) => {
-        if(!doc) {
-            res.status(404).send(doc);
-        } else {
-            res.send(doc);
-        }
-    }, (err) => {
-        res.status(400).send(err);
-    });
-});
+
+
+// app.get('/users/:id', (req, res) => {
+//     User.findById(req.params.id).then((doc) => {
+//         if(!doc) {
+//             res.status(404).send(doc);
+//         } else {
+//             res.send(doc);
+//         }
+//     }, (err) => {
+//         res.status(400).send(err);
+//     });
+// });
+
+
 
 app.get('/todos/:id', (req, res) => {
     Todo.findById(req.params.id).then((doc) => {
@@ -82,17 +89,17 @@ app.delete('/todos/:id', (req, res) => {
     });
 });
 
-app.delete('/users/:id', (req, res) => {
-    User.findByIdAndRemove(req.params.id).then((doc) => {
-        if(!doc) {
-            res.status(404).send(doc);
-        } else {
-            res.send(doc);
-        }
-    }, (err) => {
-        res.status(400).send(err);
-    });
-});
+// app.delete('/users/:id', (req, res) => {
+//     User.findByIdAndRemove(req.params.id).then((doc) => {
+//         if(!doc) {
+//             res.status(404).send(doc);
+//         } else {
+//             res.send(doc);
+//         }
+//     }, (err) => {
+//         res.status(400).send(err);
+//     });
+// });
 
 app.patch('/todos/:id', (req, res)=> {
     var body = _.pick(req.body, ['text', 'completed']);
@@ -109,24 +116,34 @@ app.patch('/todos/:id', (req, res)=> {
     });
 });
 
-app.patch('/users/:id', (req, res) => {
-    var body = _.pick(req.body, 'email');
-    User.findByIdAndUpdate(req.params.id, {$set: body}, {new: true}).then((doc) => {
-        res.send(doc);
-    }, (e) => {
-        res.status(400).send(e);
-    });
-});
+// app.patch('/users/:id', (req, res) => {
+//     var body = _.pick(req.body, 'email');
+//     User.findByIdAndUpdate(req.params.id, {$set: body}, {new: true}).then((doc) => {
+//         res.send(doc);
+//     }, (e) => {
+//         res.status(400).send(e);
+//     });
+// });
 
+
+
+
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
+});
 
 
 app.post('/users', (req, res) => {
 
     var body = _.pick(req.body, ['email','password']);
     var user = new User (body);
+    console.log(req.body);
+
     user.save().then((doc) => {
-        res.send(doc);
-    }, (e) => {
+        return user.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth', token).send(user);
+    }).catch((e) => {
         res.status(400).send(e);
     });
 });
