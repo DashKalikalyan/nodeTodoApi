@@ -54,17 +54,35 @@ UserSchema.statics.findByToken = function (token) {
     return User.findOne({_id: decoded._id, 'tokens.token': token, 'tokens.access': 'auth'});
 };
 
+UserSchema.statics.findByCredentials = function (email) {
+    var User = this;
+    console.log(email);
+    return User.findOne({email: email});
+
+};
+
 UserSchema.methods.generateAuthToken = function () {
     var user = this;
     var access ='auth';
     var token = jwt.sign({_id: user._id, access}, 'abc123').toString();
     user.tokens.push({access: access, token: token});
-    // return user.save().then((res) => {
-    //     return token;
-    // });
-    user.save();
-    return token;
+    return user.save().then((res) => {
+        return token;
+    });
+    // user.save();
+    // return token;
 };
+
+UserSchema.methods.removeToken = function (token) {
+    var user =this;
+    return user.update({
+        $pull: {
+            tokens: {
+                token: token
+            }
+        }
+    });
+}
 
 var User = mongoose.model('User', UserSchema);
 

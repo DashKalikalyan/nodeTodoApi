@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 //being added to control the update being done by user in PATCH HTTP request
 const _ = require('lodash');
+var bcrypt = require ('bcryptjs');
 
 var mongoose = require ('./db/mongoose').mongoose;
 var Todo = require ('./models/todo').Todo;
@@ -41,13 +42,7 @@ app.get('/todos', (req, res) => {
 });
 
 
-app.get('/users', (req, res) => {
-    User.find({}, 'email').then((users) => {
-        res.send(users);
-    }, (e) => {
-        res.status(400).send(e);
-    });
-});
+
 
 
 
@@ -136,15 +131,60 @@ app.get('/users/me', authenticate, (req, res) => {
 app.post('/users', (req, res) => {
 
     var body = _.pick(req.body, ['email','password']);
-    var user = new User (body);
-    console.log(req.body);
 
-    user.save().then((doc) => {
-        return user.generateAuthToken();
-    }).then((token) => {
-        res.header('x-auth', token).send(user);
+    console.log('hello');
+    bcrypt.hash(body.password, 10, (err, hash) => {
+        if (err) {
+            console.log();
+        } else {
+            body.password =hash;
+            var user = new User (body);
+
+            user.save().then((doc) => {
+                return user.generateAuthToken();
+            }).then((token) => {
+                res.header('x-auth', token).send(user);
+            }).catch((e) => {
+                res.status(400).send(e);
+            });
+        }
+
+    });
+
+});
+
+app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    console.log(body);
+    User.findByCredentials(body.email).then((user) => {
+        if(!user) {
+            res.send('no user present with that id');
+        } else {
+            bcrypt.compare(body.password,user.password, (err, result) => {
+                if(result) {
+                    user.generateAuthToken().then((token) => {
+                        res.header('x-auth', token).send(body);
+                    });
+                }
+            });
+        }
     }).catch((e) => {
+        res.send(e);
+    });
+});
+
+
+app.get('/users', (req, res) => {
+    User.find({}, 'email').then((users) => {
+        res.send(users);
+    }, (e) => {
         res.status(400).send(e);
+    });
+});
+
+app.delete('/users/me/token', authenticate, (req, res) => {
+    req.user.removeToken(req.token).then(() => {
+        res.status(200).send('logged out');
     });
 });
 
