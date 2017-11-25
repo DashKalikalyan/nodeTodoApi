@@ -21,9 +21,10 @@ var app = express();
 
 app.use(bodyParser.json());
 
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate,(req, res) => {
     var todo = new Todo ({
-            text: req.body.text
+            text: req.body.text,
+            _creator: req.user._id
     });
     todo.save().then((doc) => {
         res.send(doc);
@@ -33,8 +34,8 @@ app.post('/todos', (req, res) => {
 });
 
 
-app.get('/todos', (req, res) => {
-    Todo.find({text: 'postman'},'text').then((todos) => {
+app.get('/todos', authenticate, (req, res) => {
+    Todo.find({_creator:req.user._id},'text').then((todos) => {
         res.send(todos);
     }, (e) => {
         res.status(400).send(e);
@@ -60,8 +61,8 @@ app.get('/todos', (req, res) => {
 
 
 
-app.get('/todos/:id', (req, res) => {
-    Todo.findById(req.params.id).then((doc) => {
+app.get('/todos/:id', authenticate,(req, res) => {
+    Todo.findOne({_id:req.params.id, _creator: req.user._id}).then((doc) => {
         if(!doc) {
             res.status(404).send(doc);
         } else {
@@ -72,8 +73,8 @@ app.get('/todos/:id', (req, res) => {
     });
 });
 
-app.delete('/todos/:id', (req, res) => {
-    Todo.findByIdAndRemove(req.params.id).then((doc) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
+    Todo.findOneAndRemove({_id:req.params.id, _creator: req.user._id}).then((doc) => {
         if(!doc) {
             res.status(404).send(doc);
         } else {
@@ -96,7 +97,7 @@ app.delete('/todos/:id', (req, res) => {
 //     });
 // });
 
-app.patch('/todos/:id', (req, res)=> {
+app.patch('/todos/:id', authenticate,(req, res)=> {
     var body = _.pick(req.body, ['text', 'completed']);
     if (_.isBoolean(body.completed) && body.completed) {
         body.completedAt = new Date().getTime();
@@ -104,7 +105,7 @@ app.patch('/todos/:id', (req, res)=> {
         body.completed=false;
         body.completedAt=null;
     }
-    Todo.findByIdAndUpdate(req.params.id, {$set: body}, {new: true}).then((doc) => {
+    Todo.findOneAndUpdate({_id:req.params.id, _creator: req.user._id}, {$set: body}, {new: true}).then((doc) => {
         res.send(doc);
     }, (e) => {
         res.status(400).send(e);
@@ -131,8 +132,6 @@ app.get('/users/me', authenticate, (req, res) => {
 app.post('/users', (req, res) => {
 
     var body = _.pick(req.body, ['email','password']);
-
-    console.log('hello');
     bcrypt.hash(body.password, 10, (err, hash) => {
         if (err) {
             console.log();
