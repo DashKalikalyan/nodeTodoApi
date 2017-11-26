@@ -42,25 +42,6 @@ app.get('/todos', authenticate, (req, res) => {
     });
 });
 
-
-
-
-
-
-// app.get('/users/:id', (req, res) => {
-//     User.findById(req.params.id).then((doc) => {
-//         if(!doc) {
-//             res.status(404).send(doc);
-//         } else {
-//             res.send(doc);
-//         }
-//     }, (err) => {
-//         res.status(400).send(err);
-//     });
-// });
-
-
-
 app.get('/todos/:id', authenticate,(req, res) => {
     Todo.findOne({_id:req.params.id, _creator: req.user._id}).then((doc) => {
         if(!doc) {
@@ -85,17 +66,6 @@ app.delete('/todos/:id', authenticate, (req, res) => {
     });
 });
 
-// app.delete('/users/:id', (req, res) => {
-//     User.findByIdAndRemove(req.params.id).then((doc) => {
-//         if(!doc) {
-//             res.status(404).send(doc);
-//         } else {
-//             res.send(doc);
-//         }
-//     }, (err) => {
-//         res.status(400).send(err);
-//     });
-// });
 
 app.patch('/todos/:id', authenticate,(req, res)=> {
     var body = _.pick(req.body, ['text', 'completed']);
@@ -112,17 +82,6 @@ app.patch('/todos/:id', authenticate,(req, res)=> {
     });
 });
 
-// app.patch('/users/:id', (req, res) => {
-//     var body = _.pick(req.body, 'email');
-//     User.findByIdAndUpdate(req.params.id, {$set: body}, {new: true}).then((doc) => {
-//         res.send(doc);
-//     }, (e) => {
-//         res.status(400).send(e);
-//     });
-// });
-
-
-
 
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
@@ -130,7 +89,6 @@ app.get('/users/me', authenticate, (req, res) => {
 
 
 app.post('/users', (req, res) => {
-
     var body = _.pick(req.body, ['email','password']);
     bcrypt.hash(body.password, 10, (err, hash) => {
         if (err) {
@@ -149,7 +107,6 @@ app.post('/users', (req, res) => {
         }
 
     });
-
 });
 
 app.post('/users/login', (req, res) => {
@@ -192,6 +149,39 @@ app.listen(3000, () => {
 });
 
 
+// app.get('/users/:id', (req, res) => {
+//     User.findById(req.params.id).then((doc) => {
+//         if(!doc) {
+//             res.status(404).send(doc);
+//         } else {
+//             res.send(doc);
+//         }
+//     }, (err) => {
+//         res.status(400).send(err);
+//     });
+// });
+
+
+// app.patch('/users/:id', (req, res) => {
+//     var body = _.pick(req.body, 'email');
+//     User.findByIdAndUpdate(req.params.id, {$set: body}, {new: true}).then((doc) => {
+//         res.send(doc);
+//     }, (e) => {
+//         res.status(400).send(e);
+//     });
+// });
+
+// app.delete('/users/:id', (req, res) => {
+//     User.findByIdAndRemove(req.params.id).then((doc) => {
+//         if(!doc) {
+//             res.status(404).send(doc);
+//         } else {
+//             res.send(doc);
+//         }
+//     }, (err) => {
+//         res.status(400).send(err);
+//     });
+// });
 
 //
 // var newTodo = new Todo({
